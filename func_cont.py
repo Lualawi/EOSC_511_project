@@ -98,6 +98,9 @@ def initial_conditions(c1,c, n_grid):
     """
     c.now[0:n_grid - 1] = 0
     c.now[int(n_grid/3)] = c1
+#     c.now[int(n_grid/3)+1] = c1
+#     c.now[int(n_grid/3)+2] = c1
+#     c.now[int(n_grid/3)+3] = c1
     
 
 def boundary_conditions(c_array, n_grid):
@@ -177,6 +180,9 @@ def Crank_Nicolson(c, u, k, n_grid, dt, dx,c1):
     for pt in np.arange(1, n_grid - 1):
         c.next[pt] = max(0,nxt[pt])
     c.next[int(n_grid/3)] =  c1
+#     c.next[int(n_grid/3)+1] =  c1
+#     c.next[int(n_grid/3)+2] =  c1
+#     c.next[int(n_grid/3)+3] =  c1
     
 #     while True:
 #         c_old = c.next
@@ -216,7 +222,8 @@ def nsdf(c,u,K, n_grid,dt,dx, c1):
   b1 = a1/(np.exp(h/K)-1) # coefficient to tidy up equation
  
   for pt in np.arange(1, n_grid-1):
-    c.next[pt] = b1*c.now[pt+1]+(1-a1*u-2*b1)*c.now[pt]+(a1*u+b1)*c.now[pt-1]      
+    c.next[pt] = b1*c.now[pt+1]+(1-a1*u-2*b1)*c.now[pt]+(a1*u+b1)*c.now[pt-1]   
+    
   c.next[int(n_grid/3)] =  c1
 
 def Lax_Wendroff(c, u, k, n_grid, dt, dx, c1):
@@ -240,10 +247,12 @@ def make_graph(c, dt, n_time):
     """
 
     # Create a figure with 2 sub-plots
-    fig, (ax_c) = plt.subplots(1,1, figsize=(10,7))
-
+    fig = plt.figure(figsize=(14,7))
+    
+    
     # Set the figure title, and the axes labels.
-    the_title = fig.text(0.25, 0.95, 'Results from t = %.3fs to %.3fs' % (0, dt*n_time))
+    ax_c = fig.add_subplot(121)
+    ax_c.set_title(f'Results from numerical dt = {dt}s & dx =1000m')
     ax_c.set_ylabel('c [mg/m^3]')
     #ax_h.set_ylabel('h [cm]')
     ax_c.set_xlabel('Grid Point')
@@ -256,19 +265,30 @@ def make_graph(c, dt, n_time):
 
     # Only try to plot 20 lines, so choose an interval if more than that (i.e. plot
     # every interval lines
-    interval = np.int(np.ceil(n_time/50))
-
+    interval = np.int(np.ceil(n_time/500))
+    print('where')
     # Do the main plot
     for time in range(0, n_time, interval):
         colorVal = scalarMap.to_rgba(time)
-        ax_c.plot(c.store[:, time], color=colorVal)
+        ax_c.plot(c[0].store[:, time], color=colorVal)
         #ax_h.plot(h.store[:, time], color=colorVal)
 
-
+    ax_c = fig.add_subplot(122)
+    ax_c.set_title(f'Results from analytical solution')
+    ax_c.set_ylabel('c [mg/m^3]')
+    #ax_h.set_ylabel('h [cm]')
+    ax_c.set_xlabel('Grid Point')
+    
+    # Do the main plot
+    for time in range(0, n_time, interval):
+        colorVal = scalarMap.to_rgba(time)
+        ax_c.plot(c[1].store[:, time], color=colorVal)
+    
     # Add the custom colorbar
     ax2 = fig.add_axes([0.95, 0.05, 0.05, 0.9])
     cb1 = colorbar.ColorbarBase(ax2, cmap=cmap, norm=cNorm_inseconds)
     cb1.set_label('Time (s)')
+    
     return
 
 def numeric(args):
@@ -284,12 +304,12 @@ def numeric(args):
     # Constants and parameters of the model
     u = 3.39 #wind speed in x direction in m/s
     k = 2.0   #eddy diffusivity coefficient in m^2/s
-    c1 = 100.0   #initial pollution amount g/m3
+    c1 = 600.0   #initial pollution amount g/m3
     domain_length = 360000 #360km
  
-    dx = 100   #stepsize
+    dx = 1000   #stepsize
     courant = 0.339 #keep less than 1 for advection diffusion
-    dt = courant * dx/u                  # time step [s]
+    dt = 30                  # time step [s]
     # Create velocity and surface height objects
     c = Quantity(n_grid, n_time)
     c_an = Quantity(n_grid, n_time)
@@ -339,10 +359,10 @@ def numeric(args):
         c_an.store_timestep(t)
         c.shift()
         c_an.shift()
-
+    
+    cs = [c,c_an]
     # Plot the results as colored graphs
-    make_graph(c, dt, n_time)
-    make_graph(c_an, dt, n_time)
+    make_graph(cs, dt, n_time)
     return
 
 

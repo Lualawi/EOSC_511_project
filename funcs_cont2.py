@@ -127,7 +127,7 @@ def scheme(c, u, k, n_grid, dt, dx):
 #     h.next[1:n_grid - 1] = (h.prev[1:n_grid - 1]
 #                             - gh * (u.now[2:n_grid] - u.now[:n_grid - 2]))
 
-def Crank_Nicolson(c, u, k, n_grid, dt, dx):
+def Crank_Nicolson(c1,c, u, k, n_grid, dt, dx):
     
     a = (u*dt)/(4*dx)
     b = (k*dt)/(2*(dx**2))
@@ -164,6 +164,7 @@ def Crank_Nicolson(c, u, k, n_grid, dt, dx):
     nxt = np.matmul(np.linalg.inv(cof1_all),rhs)
     for pt in np.arange(1, n_grid - 1):
         c.next[pt] = max(0,nxt[pt])
+    c.next[int(n_grid/3)] =  c1
 
     
 #     while True:
@@ -176,13 +177,14 @@ def Crank_Nicolson(c, u, k, n_grid, dt, dx):
 #             break
 
 
-def Upstream(c, u, k, n_grid, dt, dx):
+def Upstream(c1,c, u, k, n_grid, dt, dx):
 
 #    for pt in np.arange(1, n_grid - 1):
 #        c.next[pt] = c.now[pt] - u*(dt/dx)*(c.now[pt + 1] - c.now[pt])  + k* (dt/(dx**2))*(c.now[pt + 1] - 2*c.now[pt] + c.now[pt - 1]) 
 
     for pt in np.arange(1, n_grid - 1):
         c.next[pt] = c.now[pt] - u*(dt/dx)*(c.now[pt] - c.now[pt - 1])  + ((k*dt)/(dx**2))*(c.now[pt + 1] - 2*c.now[pt] + c.now[pt - 1])       
+    c.next[int(n_grid/3)] =  c1
 
 
 def FCTS(c, u, k, n_grid, dt, dx):
@@ -234,7 +236,7 @@ def make_graph(cs, dts, n_times):
         n_time= n_times[i]
         
         # Set the figure title, and the axes labels.
-        ax_c.set_title(f' dt = {dt}s, dx = 1000m')
+        ax_c.set_title(f'dt = {dt}s,dx = 1000m')
         ax_c.set_ylabel('c [mg/m^3]')
         #ax_h.set_ylabel('h [cm]')
         ax_c.set_xlabel('Grid Point')
@@ -315,7 +317,7 @@ def numeric(args):
         # Time step loop using leap-frog scheme
         for t in np.arange(1, n_time):
             # Advance the solution and apply the boundary conditions
-            Upstream(c, u, k, n_grid, dt, dx)
+            Upstream(c1,c, u, k, n_grid, dt, dx)
             boundary_conditions(c.next, n_grid)
             # Store the values in the time step results arrays, and shift
             # .now to .prev, and .next to .now in preparation for the next
